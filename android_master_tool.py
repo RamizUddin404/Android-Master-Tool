@@ -197,16 +197,23 @@ class AndroidMasterTool:
                 ("3", "Media Capture", "4", "App Manager"),
                 ("5", "Extract APK", "6", "Network Info"),
                 ("7", "Process List", "8", "Live Logcat"),
-                ("9", "Remote Shell", "0", "FORCE POWER MENU"),
+                ("9", "Remote Shell", "R", "REBOOT TO BOOTLOADER"),
+                ("0", "FULL POWER MENU", "b", "Back to Devices"),
             ]
             
             for k1, v1, k2, v2 in menu_items:
                 print(f"  {UI.GREEN}[{k1}]{UI.END} {UI.BOLD}{v1.ljust(22)}{UI.END} |  {UI.GREEN}[{k2}]{UI.END} {UI.BOLD}{v2}{UI.END}")
-            print(f"  {UI.RED}[b]{UI.END} {UI.BOLD}Back to Devices{UI.END}")
             
             cmd = input(f"\n{UI.BOLD}➔ Select Action: {UI.END}").lower()
             if cmd == 'b': break
-            self.execute_command(cmd)
+            elif cmd == 'r':
+                UI.status("Sending: adb reboot bootloader", "warn")
+                self.run(f"{self.adb} -s {self.target} reboot bootloader")
+                UI.status("Device should be rebooting to Bootloader/Fastboot.", "success")
+                time.sleep(2)
+                break # Return to device list as it will disconnect
+            else:
+                self.execute_command(cmd)
 
     def execute_command(self, cmd):
         if cmd == '1':
