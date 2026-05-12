@@ -1,0 +1,21 @@
+# Bytecode / Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Tool Generated Files
+screenshot_*.png
+record_*.mp4
+*.apk
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

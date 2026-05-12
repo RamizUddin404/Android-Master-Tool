@@ -67,6 +67,7 @@ class AndroidMasterTool:
     ║              >> THE ULTIMATE DIGITAL CONSOLE <<              ║
     ║        {UI.CYAN}★ Created and Developed by: {UI.YELLOW}Ramiz Uddin{UI.PURPLE} ★           ║
     ║              {UI.GREEN}● Status: 100% Real & Working Mode ●{UI.PURPLE}            ║
+    ║                {UI.BOLD}{UI.YELLOW}>>> ULTIMATE MASTER EDITION <<<{UI.END}{UI.PURPLE}               ║
     ╚══════════════════════════════════════════════════════════════╝{UI.END}""")
 
     def main_menu(self):
@@ -88,15 +89,14 @@ class AndroidMasterTool:
 
     def preview_features(self):
         self.banner()
-        UI.header("TOOL CAPABILITIES PREVIEW")
+        UI.header("ULTIMATE TOOL CAPABILITIES")
         features = [
-            ("Hardware Metrics", "Live Battery, CPU, Storage, and RAM monitoring."),
-            ("Remote Operations", "File Control, Screen Capture, and App Extraction."),
-            ("Advanced Suite", "System Debloater, DPI/Resolution Changer."),
-            ("Input Simulation", "Remote control Home/Back and Text typing."),
-            ("Wireless ADB", "Control your device over Wi-Fi (No Cables)."),
-            ("Network & Debug", "Live Logcat, Log Saver, and Network analysis."),
+            ("Hardware & Health", "Live Battery, CPU, Storage, and Thermal monitoring."),
+            ("Advanced File Ops", "Bi-directional transfer and Batch APK Installation."),
             ("Power Automation", "Force reboot to Fastboot/Recovery while phone is ON."),
+            ("System Optimization", "Advanced Debloater and Screen DPI/Res Changer."),
+            ("Input & Automation", "Remote Input Simulator (Keys/Text)."),
+            ("Developer Suite", "Wireless ADB, Live Logcat, and App Extraction."),
             ("Fastboot Console", "Direct commands for Bootloader Unlocking & Flashing.")
         ]
         for title, desc in features:
@@ -193,14 +193,14 @@ class AndroidMasterTool:
             UI.header(f"ACTIVE CONTROL: {self.target}")
             
             menu_items = [
-                ("1", "Hardware Info", "2", "File Manager"),
+                ("1", "Hardware Info", "2", "File & Batch APK"),
                 ("3", "Media Capture", "4", "App Manager"),
-                ("5", "Extract APK", "6", "Network Info"),
+                ("5", "Extract APK", "6", "Network & Ports"),
                 ("7", "Process List", "8", "Live Logcat"),
-                ("9", "Remote Shell", "R", "REBOOT TO BOOTLOADER"),
-                ("A", "Advanced Info", "D", "System Debloater"),
-                ("I", "Input Simulator", "S", "Screen Config"),
-                ("W", "Wireless ADB", "L", "Save Logcat File"),
+                ("R", "REBOOT TO FASTBOOT", "A", "Advanced Device Info"),
+                ("D", "System Debloater", "I", "Input Simulator"),
+                ("S", "Screen Config", "W", "Wireless ADB"),
+                ("H", "Device Health", "L", "Logcat Saver"),
                 ("0", "FULL POWER MENU", "b", "Back to Devices"),
             ]
             
@@ -212,7 +212,7 @@ class AndroidMasterTool:
             elif cmd == 'r':
                 UI.status("Sending: adb reboot bootloader", "warn")
                 self.run(f"{self.adb} -s {self.target} reboot bootloader")
-                UI.status("Device should be rebooting to Bootloader/Fastboot.", "success")
+                UI.status("Device should be rebooting to Fastboot/Bootloader.", "success")
                 time.sleep(2)
                 break
             else:
@@ -228,8 +228,8 @@ class AndroidMasterTool:
             input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
             
         elif cmd == '2':
-            UI.header("FILE MANAGER")
-            print("  [1] Pull (Download) [2] Push (Upload)")
+            UI.header("FILE & BATCH APK")
+            print("  [1] Pull (Download) [2] Push (Upload) [3] Batch Install APKs")
             sub = input(f"\n{UI.BOLD}➔ Option: {UI.END}")
             if sub == '1':
                 rem = input("  Device Path: ")
@@ -241,6 +241,15 @@ class AndroidMasterTool:
                     res = self.run(f"{self.adb} -s {self.target} push {loc} /sdcard/")
                     UI.status(res, "success")
                 else: UI.status("Local file not found!", "error")
+            elif sub == '3':
+                folder = input("  ➔ Enter path to folder with APKs: ")
+                if os.path.isdir(folder):
+                    apks = [f for f in os.listdir(folder) if f.endswith('.apk')]
+                    for apk in apks:
+                        UI.status(f"Installing {apk}...")
+                        self.run(f"{self.adb} -s {self.target} install '{os.path.join(folder, apk)}'")
+                    UI.status(f"Batch installation complete ({len(apks)} apps).", "success")
+                else: UI.status("Folder not found!", "error")
             input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
             
         elif cmd == '3':
@@ -291,8 +300,17 @@ class AndroidMasterTool:
             input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
 
         elif cmd == '6':
-            UI.header("NETWORK INFO")
-            print(self.run(f"{self.adb} -s {self.target} shell ip addr show wlan0"))
+            UI.header("NETWORK & PORTS")
+            print("  [1] IP Config  [2] Active Ports  [3] Port Forwarding")
+            sub = input(f"\n{UI.BOLD}➔ Option: {UI.END}")
+            if sub == '1':
+                print(self.run(f"{self.adb} -s {self.target} shell ip addr show wlan0"))
+            elif sub == '2':
+                print(self.run(f"{self.adb} -s {self.target} shell netstat -antp"))
+            elif sub == '3':
+                local = input("  ➔ Local Port: ")
+                rem = input("  ➔ Remote Port: ")
+                print(self.run(f"{self.adb} forward tcp:{local} tcp:{rem}"))
             input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
 
         elif cmd == '7':
@@ -365,6 +383,14 @@ class AndroidMasterTool:
             self.run(f"{self.adb} -s {self.target} tcpip 5555")
             ip = self.run(f"{self.adb} -s {self.target} shell ip addr show wlan0 | grep 'inet ' | awk '{{print $2}}'").split('/')[0]
             UI.status(f"Setup Complete! You can now connect via: adb connect {ip}", "success")
+            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
+
+        elif cmd == 'h':
+            UI.header("DEVICE HEALTH & THERMAL")
+            print(f"\n{UI.BOLD}--- THERMAL SENSORS ---{UI.END}")
+            print(self.run(f"{self.adb} -s {self.target} shell dumpsys thermalservice"))
+            print(f"\n{UI.BOLD}--- CPU FREQUENCY ---{UI.END}")
+            print(self.run(f"{self.adb} -s {self.target} shell cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq"))
             input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
 
         elif cmd == 'l':
