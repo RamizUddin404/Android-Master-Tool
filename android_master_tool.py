@@ -51,7 +51,9 @@ class AndroidMasterTool:
     ║   ██╔══██║██║╚██╗██║██║  ██║██╔══██╗██║   ██║██║██║  ██║     ║
     ║   ██║  ██║██║ ╚████║██████╔╝██║  ██║╚██████╔╝██║██████╔╝     ║
     ║   ╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝╚═════╝      ║
+    ║                                                              ║
     ║              >> THE ULTIMATE DIGITAL CONSOLE <<              ║
+    ║        {UI.CYAN}★ Created and Developed by: {UI.YELLOW}Ramiz Uddin{UI.PURPLE} ★           ║
     ╚══════════════════════════════════════════════════════════════╝{UI.END}""")
 
     def main_menu(self):
