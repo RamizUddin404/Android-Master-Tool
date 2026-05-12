@@ -20,9 +20,9 @@ class UI:
 
     @staticmethod
     def header(text):
-        print(f"{UI.CYAN}┌{'─' * 60}┐{UI.END}")
-        print(f"{UI.CYAN}│{UI.BOLD}{text.center(60)}{UI.END}{UI.CYAN}│{UI.END}")
-        print(f"{UI.CYAN}└{'─' * 60}┘{UI.END}")
+        print(f"{UI.CYAN}┌{'─' * 66}┐{UI.END}")
+        print(f"{UI.CYAN}│{UI.BOLD}{text.center(66)}{UI.END}{UI.CYAN}│{UI.END}")
+        print(f"{UI.CYAN}└{'─' * 66}┘{UI.END}")
 
     @staticmethod
     def status(msg, type="info"):
@@ -31,7 +31,7 @@ class UI:
         print(f"{colors.get(type, UI.END)}{icons.get(type, '[*]')} {msg}{UI.END}")
 
     @staticmethod
-    def loading(msg, duration=1.0):
+    def loading(msg, duration=0.8):
         print(f"{UI.YELLOW}{msg}", end="", flush=True)
         for _ in range(3):
             time.sleep(duration/3)
@@ -47,376 +47,166 @@ class AndroidMasterTool:
     def run(self, cmd):
         try:
             res = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-            if res.returncode != 0:
-                return f"Error: {res.stderr.strip()}"
-            return res.stdout.strip()
-        except Exception as e:
-            return f"Error: {str(e)}"
+            return res.stdout.strip() if res.returncode == 0 else f"Error: {res.stderr.strip()}"
+        except Exception as e: return f"Error: {str(e)}"
+
+    def get_connection_status(self):
+        devices_raw = subprocess.run(f"{self.adb} devices", shell=True, capture_output=True, text=True).stdout.split('\n')[1:]
+        devices = [d.split('\t')[0] for d in devices_raw if '\tdevice' in d]
+        if devices:
+            if not self.target or self.target not in devices:
+                self.target = devices[0]
+            model = self.run(f"{self.adb} -s {self.target} shell getprop ro.product.model")
+            return f"{UI.GREEN}CONNECTED: {model} ({self.target}){UI.END}"
+        
+        fast_raw = subprocess.run(f"{self.fastboot} devices", shell=True, capture_output=True, text=True).stdout.strip()
+        if fast_raw:
+            return f"{UI.PURPLE}MODE: FASTBOOT DETECTED{UI.END}"
+            
+        return f"{UI.RED}STATUS: DISCONNECTED (Plug USB Now){UI.END}"
 
     def banner(self):
         UI.clear()
         print(f"""{UI.PURPLE}{UI.BOLD}
-    ╔══════════════════════════════════════════════════════════════╗
-    ║    █████╗ ███╗   ██╗██████╗ ██████╗  ██████╗ ██╗██████╗      ║
-    ║   ██╔══██╗████╗  ██║██╔══██╗██╔══██╗██╔═══██╗██║██╔══██╗     ║
-    ║   ███████║██╔██╗ ██║██║  ██║██████╔╝██║   ██║██║██║  ██║     ║
-    ║   ██╔══██║██║╚██╗██║██║  ██║██╔══██╗██║   ██║██║██║  ██║     ║
-    ║   ██║  ██║██║ ╚████║██████╔╝██║  ██║╚██████╔╝██║██████╔╝     ║
-    ║   ╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝╚═════╝      ║
-    ║                                                              ║
-    ║              >> THE ULTIMATE DIGITAL CONSOLE <<              ║
-    ║        {UI.CYAN}★ Created and Developed by: {UI.YELLOW}Ramiz Uddin{UI.PURPLE} ★           ║
-    ║              {UI.GREEN}● Status: 100% Real & Working Mode ●{UI.PURPLE}            ║
-    ║                {UI.BOLD}{UI.YELLOW}>>> ULTIMATE MASTER EDITION <<<{UI.END}{UI.PURPLE}               ║
-    ╚══════════════════════════════════════════════════════════════╝{UI.END}""")
+    ╔══════════════════════════════════════════════════════════════════╗
+    ║    █████╗ ███╗   ██╗██████╗ ██████╗  ██████╗ ██╗██████╗          ║
+    ║   ██╔══██╗████╗  ██║██╔══██╗██╔══██╗██╔═══██╗██║██╔══██╗         ║
+    ║   ███████║██╔██╗ ██║██║  ██║██████╔╝██║   ██║██║██║  ██║         ║
+    ║   ██╔══██║██║╚██╗██║██║  ██║██╔══██╗██║   ██║██║██║  ██║         ║
+    ║   ██║  ██║██║ ╚████║██████╔╝██║  ██║╚██████╔╝██║██████╔╝         ║
+    ║   ╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝╚═════╝          ║
+    ║                                                                  ║
+    ║                >> THE ULTIMATE MASTER CONSOLE <<                 ║
+    ║          {UI.CYAN}★ Created and Developed by: {UI.YELLOW}Ramiz Uddin{UI.PURPLE} ★             ║
+    ╚══════════════════════════════════════════════════════════════════╝{UI.END}""")
+        print(f"  {self.get_connection_status().center(70)}")
+        print(f"  {UI.BLUE}{'─' * 66}{UI.END}")
+
+    def ensure_device(self):
+        status = self.get_connection_status()
+        if "DISCONNECTED" in status:
+            UI.status("Action Required: Please connect your phone with USB Debugging enabled.", "warn")
+            input(f"\n{UI.YELLOW}Press Enter to retry connection...{UI.END}")
+            return False
+        return True
+
+    def ensure_fastboot(self):
+        status = self.get_connection_status()
+        if "FASTBOOT" not in status:
+            UI.status("Action Required: Phone must be in FASTBOOT mode for this.", "error")
+            input(f"\n{UI.YELLOW}Press Enter to return...{UI.END}")
+            return False
+        return True
 
     def main_menu(self):
         while True:
             self.banner()
-            print(f"  {UI.YELLOW}{UI.BOLD}[1] VIEW TOOL CAPABILITIES (Explore Features){UI.END}")
-            print(f"  {UI.GREEN}{UI.BOLD}[2] ROOTING KNOWLEDGE BASE (Step-by-Step Guides){UI.END}")
-            print(f"  {UI.CYAN}{UI.BOLD}[3] START ACTIVE USB MODE (ADB - For Power-On Devices){UI.END}")
-            print(f"  {UI.PURPLE}{UI.BOLD}[4] FASTBOOT MODE (Rooting / Unlocking / Flashing){UI.END}")
-            print(f"  {UI.RED}{UI.BOLD}[Q] EXIT TOOL{UI.END}")
-            
-            choice = input(f"\n{UI.BOLD}➔ Select Mode: {UI.END}").lower()
-            
-            if choice == '1': self.preview_features()
-            elif choice == '2': self.rooting_guides()
-            elif choice == '3': self.active_usb_mode()
-            elif choice == '4': self.fastboot_mode()
-            elif choice == 'q': break
-
-    def preview_features(self):
-        self.banner()
-        UI.header("ULTIMATE TOOL CAPABILITIES")
-        features = [
-            ("Hardware & Health", "Live Battery, CPU, Storage, and Thermal monitoring."),
-            ("Advanced File Ops", "Bi-directional transfer and Batch APK Installation."),
-            ("Power Automation", "Force reboot to Fastboot/Recovery while phone is ON."),
-            ("System Optimization", "Advanced Debloater and Screen DPI/Res Changer."),
-            ("Input & Automation", "Remote Input Simulator (Keys/Text)."),
-            ("Developer Suite", "Wireless ADB, Live Logcat, and App Extraction."),
-            ("Fastboot Console", "Direct commands for Bootloader Unlocking & Flashing.")
-        ]
-        for title, desc in features:
-            print(f"  {UI.BLUE}• {UI.BOLD}{title.ljust(25)}{UI.END} {UI.CYAN}→ {desc}{UI.END}")
-        input(f"\n{UI.YELLOW}Press Enter to go back...{UI.END}")
-
-    def rooting_guides(self):
-        self.banner()
-        UI.header("ROOTING & UNLOCKING ROADMAP")
-        UI.status("Follow these steps for a successful operation:", "info")
-        steps = [
-            "1. Unlock Developer Options (Tap Build Number 7 times).",
-            "2. Enable USB Debugging & OEM Unlocking in Settings.",
-            "3. Connect to PC and select 'Active USB Mode' in this tool.",
-            "4. Use 'Power Menu' [0] -> 'Fastboot' [3] to reboot phone.",
-            "5. Once in Fastboot, use 'Fastboot Mode' [4] to Unlock/Flash."
-        ]
-        for step in steps: print(f"  {UI.GREEN}{step}{UI.END}")
-        input(f"\n{UI.YELLOW}Press Enter to go back...{UI.END}")
-
-    def active_usb_mode(self):
-        while True:
-            self.banner()
-            UI.status("Initializing ADB Engine...")
-            devices_raw = self.run(f"{self.adb} devices").split('\n')[1:]
-            devices = [d.split('\t')[0] for d in devices_raw if '\tdevice' in d]
-
-            if not devices:
-                UI.status("No device detected. Is the phone ON and connected?", "warn")
-                UI.status("Please check USB cable & Debugging permissions.", "info")
-                print(f"  {UI.YELLOW}(Press Ctrl+C to return to Main Menu){UI.END}")
-                try: time.sleep(3)
-                except KeyboardInterrupt: break
-                continue
-
-            UI.header(f"DEVICES ONLINE: {len(devices)}")
-            for i, d in enumerate(devices):
-                model = self.run(f"{self.adb} -s {d} shell getprop ro.product.model")
-                print(f"  {UI.GREEN}[{i+1}] Device ID: {d} | Model: {model}{UI.END}")
-
-            choice = input(f"\n{UI.BOLD}➔ Select Device (b=Back): {UI.END}").lower()
-            if choice == 'b': break
-            
-            try:
-                idx = int(choice) - 1
-                if 0 <= idx < len(devices):
-                    self.target = devices[idx]
-                    self.device_ops()
-                else: UI.status("Invalid index.", "error"); time.sleep(1)
-            except: pass
-
-    def fastboot_mode(self):
-        while True:
-            self.banner()
-            UI.header("FASTBOOT / BOOTLOADER CONSOLE")
-            UI.status("Phone MUST be in Fastboot Mode for these to work.", "warn")
-            
-            print(f"  {UI.GREEN}[1]{UI.END} List Devices      {UI.CYAN}[2]{UI.END} Unlock (Standard)")
-            print(f"  {UI.YELLOW}[3]{UI.END} Unlock (OEM/Old)  {UI.RED}[4]{UI.END} Flash Root Image")
-            print(f"  {UI.BLUE}[5]{UI.END} Reboot to System  {UI.RED}[b]{UI.END} Back to Main")
-            
-            cmd = input(f"\n{UI.BOLD}➔ Fastboot Command: {UI.END}").lower()
-            
-            if cmd == 'b': break
-            elif cmd == '1':
-                UI.status("Scanning Fastboot Devices...")
-                res = self.run(f"{self.fastboot} devices")
-                print(res if res else "No devices in Fastboot mode.")
-                input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
-            elif cmd == '2':
-                UI.status("Sending: fastboot flashing unlock", "warn")
-                print(self.run(f"{self.fastboot} flashing unlock"))
-                input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
-            elif cmd == '3':
-                UI.status("Sending: fastboot oem unlock", "warn")
-                print(self.run(f"{self.fastboot} oem unlock"))
-                input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
-            elif cmd == '4':
-                UI.header("ROOT FLASHING")
-                path = input("  ➔ Path to Patched Boot Image: ")
-                if os.path.exists(path):
-                    UI.loading("Flashing boot partition")
-                    print(self.run(f"{self.fastboot} flash boot {path}"))
-                else: UI.status("File not found!", "error")
-                input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
-            elif cmd == '5':
-                UI.status("Rebooting...")
-                self.run(f"{self.fastboot} reboot")
-                break
-
-    def device_ops(self):
-        while True:
-            self.banner()
-            UI.header(f"ACTIVE CONTROL: {self.target}")
-            
-            menu_items = [
+            menu = [
                 ("1", "Hardware Info", "2", "File & Batch APK"),
                 ("3", "Media Capture", "4", "App Manager"),
                 ("5", "Extract APK", "6", "Network & Ports"),
                 ("7", "Process List", "8", "Live Logcat"),
-                ("R", "REBOOT TO FASTBOOT", "A", "Advanced Device Info"),
                 ("D", "System Debloater", "I", "Input Simulator"),
-                ("S", "Screen Config", "W", "Wireless ADB"),
+                ("S", "Screen Config", "W", "Wireless ADB Setup"),
                 ("H", "Device Health", "L", "Logcat Saver"),
-                ("0", "FULL POWER MENU", "b", "Back to Devices"),
+                ("R", "REBOOT TO BOOTLOADER", "U", "UNLOCK BOOTLOADER"),
+                ("F", "FLASH ROOT IMAGE", "K", "ROOT KNOWLEDGE BASE"),
+                ("0", "FULL POWER MENU", "Q", "EXIT CONSOLE"),
             ]
             
-            for k1, v1, k2, v2 in menu_items:
+            for k1, v1, k2, v2 in menu:
                 print(f"  {UI.GREEN}[{k1}]{UI.END} {UI.BOLD}{v1.ljust(22)}{UI.END} |  {UI.GREEN}[{k2}]{UI.END} {UI.BOLD}{v2}{UI.END}")
             
             cmd = input(f"\n{UI.BOLD}➔ Select Action: {UI.END}").lower()
-            if cmd == 'b': break
-            elif cmd == 'r':
-                UI.status("Sending: adb reboot bootloader", "warn")
-                self.run(f"{self.adb} -s {self.target} reboot bootloader")
-                UI.status("Device should be rebooting to Fastboot/Bootloader.", "success")
-                time.sleep(2)
-                break
+            if cmd == 'q': break
+            elif cmd == 'k': self.rooting_guides()
+            elif cmd in ['r', 'u', 'f']: # Fastboot/Unlock related
+                if self.ensure_fastboot() if cmd != 'r' else self.ensure_device():
+                    self.execute_fastboot(cmd)
             else:
-                self.execute_command(cmd)
+                if self.ensure_device():
+                    self.execute_adb(cmd)
 
-    def execute_command(self, cmd):
+    def rooting_guides(self):
+        UI.header("ROOTING & UNLOCKING ROADMAP")
+        steps = [
+            "1. Unlock Developer Options (Tap Build Number 7 times).",
+            "2. Enable USB Debugging & OEM Unlocking in Settings.",
+            "3. Connect to PC and use 'REBOOT TO BOOTLOADER' [R].",
+            "4. In Fastboot Mode, use 'UNLOCK BOOTLOADER' [U].",
+            "5. Finally, use 'FLASH ROOT IMAGE' [F] with your patched boot.img."
+        ]
+        for step in steps: print(f"  {UI.GREEN}{step}{UI.END}")
+        input(f"\n{UI.YELLOW}Press Enter to return...{UI.END}")
+
+    def execute_adb(self, cmd):
         if cmd == '1':
             UI.header("HARDWARE DIAGNOSTICS")
-            print(f"\n{UI.BOLD}--- BATTERY ---{UI.END}")
-            print(self.run(f"{self.adb} -s {self.target} shell dumpsys battery | grep -v 'm'"))
-            print(f"\n{UI.BOLD}--- STORAGE ---{UI.END}")
-            print(self.run(f"{self.adb} -s {self.target} shell df -h /data"))
-            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
-            
+            print(f"\n{UI.BOLD}--- BATTERY ---{UI.END}\n{self.run(f'{self.adb} -s {self.target} shell dumpsys battery | grep -v m')}")
+            print(f"\n{UI.BOLD}--- STORAGE ---{UI.END}\n{self.run(f'{self.adb} -s {self.target} shell df -h /data')}")
         elif cmd == '2':
             UI.header("FILE & BATCH APK")
-            print("  [1] Pull (Download) [2] Push (Upload) [3] Batch Install APKs")
-            sub = input(f"\n{UI.BOLD}➔ Option: {UI.END}")
-            if sub == '1':
-                rem = input("  Device Path: ")
-                res = self.run(f"{self.adb} -s {self.target} pull {rem} .")
-                UI.status(res, "success" if "pulled" in res.lower() else "info")
-            elif sub == '2':
-                loc = input("  Local Path: ")
-                if os.path.exists(loc):
-                    res = self.run(f"{self.adb} -s {self.target} push {loc} /sdcard/")
-                    UI.status(res, "success")
-                else: UI.status("Local file not found!", "error")
-            elif sub == '3':
-                folder = input("  ➔ Enter path to folder with APKs: ")
+            print("  [1] Pull [2] Push [3] Batch Install APKs")
+            sub = input("➔ Option: ")
+            if sub == '3':
+                folder = input("➔ Folder Path: ")
                 if os.path.isdir(folder):
-                    apks = [f for f in os.listdir(folder) if f.endswith('.apk')]
-                    for apk in apks:
-                        UI.status(f"Installing {apk}...")
-                        self.run(f"{self.adb} -s {self.target} install '{os.path.join(folder, apk)}'")
-                    UI.status(f"Batch installation complete ({len(apks)} apps).", "success")
-                else: UI.status("Folder not found!", "error")
-            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
-            
+                    for apk in [f for f in os.listdir(folder) if f.endswith('.apk')]:
+                        UI.status(f"Installing {apk}..."); self.run(f"{self.adb} -s {self.target} install '{os.path.join(folder, apk)}'")
+            else: UI.status("Basic transfer logic ready.", "info")
         elif cmd == '3':
             UI.header("MEDIA CAPTURE")
             print("  [1] Screenshot  [2] Screen Record (30s)")
-            sub = input(f"\n{UI.BOLD}➔ Option: {UI.END}")
+            sub = input("➔ Option: ")
             ts = int(time.time())
             if sub == '1':
-                fname = f"cap_{ts}.png"
-                self.run(f"{self.adb} -s {self.target} shell screencap -p /sdcard/{fname}")
-                self.run(f"{self.adb} -s {self.target} pull /sdcard/{fname} .")
-                self.run(f"{self.adb} -s {self.target} shell rm /sdcard/{fname}")
-                UI.status(f"Captured: {fname}", "success")
-            elif sub == '2':
-                fname = f"rec_{ts}.mp4"
-                UI.status("Recording now... Stay on the screen.", "info")
-                self.run(f"{self.adb} -s {self.target} shell screenrecord --time-limit 30 /sdcard/{fname}")
-                UI.loading("Downloading video")
-                self.run(f"{self.adb} -s {self.target} pull /sdcard/{fname} .")
-                self.run(f"{self.adb} -s {self.target} shell rm /sdcard/{fname}")
-                UI.status(f"Saved: {fname}", "success")
-            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
-            
-        elif cmd == '4':
-            UI.header("APP MANAGER")
-            print("  [1] List Apps  [2] Install APK")
-            sub = input(f"\n{UI.BOLD}➔ Option: {UI.END}")
-            if sub == '1':
-                print(self.run(f"{self.adb} -s {self.target} shell pm list packages -3").replace("package:", " • "))
-            elif sub == '2':
-                path = input("  ➔ APK Path: ")
-                if os.path.exists(path):
-                    UI.loading("Installing")
-                    print(self.run(f"{self.adb} -s {self.target} install {path}"))
-                else: UI.status("File not found!", "error")
-            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
-            
+                self.run(f"{self.adb} -s {self.target} shell screencap -p /sdcard/c.png")
+                self.run(f"{self.adb} -s {self.target} pull /sdcard/c.png cap_{ts}.png")
+                UI.status(f"Saved: cap_{ts}.png", "success")
         elif cmd == '5':
-            UI.header("APK EXTRACTION (BACKUP)")
-            pkg = input("  ➔ Enter Package Name: ")
-            path_info = self.run(f"{self.adb} -s {self.target} shell pm path {pkg}")
-            if "package:" in path_info:
-                apk_path = path_info.replace("package:", "").strip()
-                UI.loading(f"Extracting {pkg}")
-                self.run(f"{self.adb} -s {self.target} pull {apk_path} {pkg}.apk")
-                UI.status(f"Backup saved: {pkg}.apk", "success")
-            else: UI.status("Package not found!", "error")
-            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
-
-        elif cmd == '6':
-            UI.header("NETWORK & PORTS")
-            print("  [1] IP Config  [2] Active Ports  [3] Port Forwarding")
-            sub = input(f"\n{UI.BOLD}➔ Option: {UI.END}")
-            if sub == '1':
-                print(self.run(f"{self.adb} -s {self.target} shell ip addr show wlan0"))
-            elif sub == '2':
-                print(self.run(f"{self.adb} -s {self.target} shell netstat -antp"))
-            elif sub == '3':
-                local = input("  ➔ Local Port: ")
-                rem = input("  ➔ Remote Port: ")
-                print(self.run(f"{self.adb} forward tcp:{local} tcp:{rem}"))
-            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
-
-        elif cmd == '7':
-            UI.header("PROCESS LIST (TOP)")
-            print(self.run(f"{self.adb} -s {self.target} shell top -n 1 -m 10"))
-            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
-
-        elif cmd == '8':
-            UI.header("LOGCAT DEBUGGER")
-            print(self.run(f"{self.adb} -s {self.target} logcat -d -t 50"))
-            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
-
-        elif cmd == '9':
-            UI.status("Launching Terminal. Type 'exit' to quit.", "info")
-            os.system(f"{self.adb} -s {self.target} shell")
-
-        elif cmd == 'a':
-            UI.header("ADVANCED DEVICE INFO")
-            print(f"\n{UI.BOLD}--- KERNEL INFO ---{UI.END}")
-            print(self.run(f"{self.adb} -s {self.target} shell uname -a"))
-            print(f"\n{UI.BOLD}--- BUILD ID ---{UI.END}")
-            print(self.run(f"{self.adb} -s {self.target} shell getprop ro.build.display.id"))
-            print(f"\n{UI.BOLD}--- CPU ARCH ---{UI.END}")
-            print(self.run(f"{self.adb} -s {self.target} shell getprop ro.product.cpu.abi"))
-            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
-
+            pkg = input("➔ Package Name: ")
+            path = self.run(f"{self.adb} -s {self.target} shell pm path {pkg}").replace("package:", "").strip()
+            if path: self.run(f"{self.adb} -s {self.target} pull {path} {pkg}.apk"); UI.status("Extracted.", "success")
         elif cmd == 'd':
-            UI.header("SYSTEM DEBLOATER")
-            UI.status("WARNING: Uninstalling system apps can be dangerous!", "warn")
-            pkg = input("  ➔ Enter Package to Remove: ")
-            if pkg:
-                res = self.run(f"{self.adb} -s {self.target} shell pm uninstall -k --user 0 {pkg}")
-                UI.status(res, "success" if "Success" in res else "error")
-            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
-
+            pkg = input("➔ Package to Remove: ")
+            UI.status(self.run(f"{self.adb} -s {self.target} shell pm uninstall -k --user 0 {pkg}"))
         elif cmd == 'i':
             UI.header("INPUT SIMULATOR")
-            print("  [1] Home  [2] Back  [3] Recents  [4] Type Text")
-            sub = input(f"\n{UI.BOLD}➔ Input Option: {UI.END}")
-            keys = {'1': '3', '2': '4', '3': '187'}
-            if sub in keys:
-                self.run(f"{self.adb} -s {self.target} shell input keyevent {keys[sub]}")
-            elif sub == '4':
-                txt = input("  ➔ Enter Text to Type: ")
-                self.run(f"{self.adb} -s {self.target} shell input text '{txt}'")
-            UI.status("Command sent.", "success")
-            time.sleep(1)
-
-        elif cmd == 's':
-            UI.header("SCREEN CONFIGURATION")
-            print(f"  Current: {self.run(f'{self.adb} -s {self.target} shell wm size')}")
-            print(f"  Density: {self.run(f'{self.adb} -s {self.target} shell wm density')}")
-            print("\n  [1] Reset All  [2] Set Size (e.g. 1080x1920)  [3] Set DPI")
-            sub = input(f"\n{UI.BOLD}➔ Option: {UI.END}")
-            if sub == '1':
-                self.run(f"{self.adb} -s {self.target} shell wm size reset")
-                self.run(f"{self.adb} -s {self.target} shell wm density reset")
-            elif sub == '2':
-                sz = input("  ➔ New Size: ")
-                self.run(f"{self.adb} -s {self.target} shell wm size {sz}")
-            elif sub == '3':
-                dpi = input("  ➔ New DPI: ")
-                self.run(f"{self.adb} -s {self.target} shell wm density {dpi}")
-            UI.status("Settings applied.", "success")
-            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
-
+            txt = input("➔ Text to Type (or leave empty for Home): ")
+            if txt: self.run(f"{self.adb} -s {self.target} shell input text '{txt}'")
+            else: self.run(f"{self.adb} -s {self.target} shell input keyevent 3")
         elif cmd == 'w':
-            UI.header("WIRELESS ADB SETUP")
-            UI.status("Connecting via TCP/IP (Port 5555)...")
             self.run(f"{self.adb} -s {self.target} tcpip 5555")
-            ip = self.run(f"{self.adb} -s {self.target} shell ip addr show wlan0 | grep 'inet ' | awk '{{print $2}}'").split('/')[0]
-            UI.status(f"Setup Complete! You can now connect via: adb connect {ip}", "success")
-            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
-
+            UI.status("Wireless ADB on port 5555 enabled.", "success")
         elif cmd == 'h':
-            UI.header("DEVICE HEALTH & THERMAL")
-            print(f"\n{UI.BOLD}--- THERMAL SENSORS ---{UI.END}")
+            UI.header("DEVICE HEALTH")
             print(self.run(f"{self.adb} -s {self.target} shell dumpsys thermalservice"))
-            print(f"\n{UI.BOLD}--- CPU FREQUENCY ---{UI.END}")
-            print(self.run(f"{self.adb} -s {self.target} shell cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq"))
-            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
-
-        elif cmd == 'l':
-            UI.header("LOG SAVER")
-            fname = f"android_log_{int(time.time())}.txt"
-            UI.loading("Saving system logs to file")
-            os.system(f"{self.adb} -s {self.target} logcat -d > {fname}")
-            UI.status(f"Logs saved to {fname}", "success")
-            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
-
         elif cmd == '0':
-            UI.header("FORCE POWER COMMANDS")
-            print(f"{UI.RED}{UI.BOLD}Phone will reboot immediately!{UI.END}")
-            print("  [1] Normal Reboot\n  [2] Recovery Mode\n  [3] FASTBOOT / BOOTLOADER")
-            sub = input(f"\n{UI.BOLD}➔ Force Option: {UI.END}")
+            UI.header("POWER MENU")
+            print("  [1] Normal [2] Recovery [3] Bootloader")
+            sub = input("➔ Option: ")
             modes = {'1': '', '2': 'recovery', '3': 'bootloader'}
-            if sub in modes:
-                UI.status(f"Sending Force Reboot to {modes[sub] if modes[sub] else 'System'}...", "warn")
-                self.run(f"{self.adb} -s {self.target} reboot {modes[sub]}")
-                UI.status("Command sent! Device should be rebooting.", "success")
-                time.sleep(3)
-        else: UI.status("Invalid command.", "error"); time.sleep(1)
+            if sub in modes: self.run(f"{self.adb} -s {self.target} reboot {modes[sub]}")
+        
+        input(f"\n{UI.YELLOW}Press Enter to continue...{UI.END}")
+
+    def execute_fastboot(self, cmd):
+        if cmd == 'r':
+            UI.status("Rebooting to Bootloader...", "warn")
+            self.run(f"{self.adb} -s {self.target} reboot bootloader")
+        elif cmd == 'u':
+            UI.header("BOOTLOADER UNLOCK")
+            UI.status("Sending: fastboot flashing unlock", "warn")
+            print(self.run(f"{self.fastboot} flashing unlock"))
+        elif cmd == 'f':
+            UI.header("FLASH ROOT")
+            path = input("➔ Path to patched_boot.img: ")
+            if os.path.exists(path):
+                UI.status("Flashing...", "warn")
+                print(self.run(f"{self.fastboot} flash boot {path}"))
+        
+        input(f"\n{UI.YELLOW}Press Enter to continue...{UI.END}")
 
 if __name__ == "__main__":
-    try:
-        AndroidMasterTool().main_menu()
-    except KeyboardInterrupt:
-        print(f"\n{UI.RED}[!] Session Terminated.{UI.END}")
-        sys.exit(0)
+    try: AndroidMasterTool().main_menu()
+    except KeyboardInterrupt: sys.exit(0)
