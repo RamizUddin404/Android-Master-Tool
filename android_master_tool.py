@@ -33,6 +33,7 @@ class UI:
 class AndroidMasterTool:
     def __init__(self):
         self.adb = "adb"
+        self.fastboot = "fastboot"
         self.target = None
 
     def run(self, cmd):
@@ -61,7 +62,8 @@ class AndroidMasterTool:
             self.banner()
             print(f"  {UI.YELLOW}{UI.BOLD}[1] VIEW TOOL CAPABILITIES (Explore Features){UI.END}")
             print(f"  {UI.GREEN}{UI.BOLD}[2] ROOTING KNOWLEDGE BASE (Step-by-Step Guides){UI.END}")
-            print(f"  {UI.CYAN}{UI.BOLD}[3] START ACTIVE USB MODE (Connect Device Now){UI.END}")
+            print(f"  {UI.CYAN}{UI.BOLD}[3] START ACTIVE USB MODE (ADB){UI.END}")
+            print(f"  {UI.PURPLE}{UI.BOLD}[4] FASTBOOT / BOOTLOADER MODE (Rooting & Flashing){UI.END}")
             print(f"  {UI.RED}{UI.BOLD}[Q] EXIT TOOL{UI.END}")
             
             choice = input(f"\n{UI.BOLD}➔ Select Mode: {UI.END}").lower()
@@ -69,6 +71,7 @@ class AndroidMasterTool:
             if choice == '1': self.preview_features()
             elif choice == '2': self.rooting_guides()
             elif choice == '3': self.active_usb_mode()
+            elif choice == '4': self.fastboot_mode()
             elif choice == 'q': break
 
     def preview_features(self):
@@ -139,6 +142,52 @@ class AndroidMasterTool:
                     self.device_ops()
                 else: UI.status("Invalid selection.", "error"); time.sleep(1)
             except: pass
+
+    def fastboot_mode(self):
+        while True:
+            self.banner()
+            UI.header("FASTBOOT / BOOTLOADER MODE")
+            UI.status("Phone MUST be in Fastboot/Bootloader mode.", "warn")
+            
+            print(f"  {UI.GREEN}[1]{UI.END} List Fastboot Devices")
+            print(f"  {UI.YELLOW}[2]{UI.END} Unlock Bootloader (Standard: fastboot flashing unlock)")
+            print(f"  {UI.YELLOW}[3]{UI.END} Unlock Bootloader (Older: fastboot oem unlock)")
+            print(f"  {UI.RED}[4]{UI.END} Flash Patched Boot Image (For Root)")
+            print(f"  {UI.CYAN}[5]{UI.END} Reboot to System")
+            print(f"  {UI.BLUE}[b]{UI.END} Back to Main Menu")
+            
+            cmd = input(f"\n{UI.BOLD}➔ Fastboot Command: {UI.END}").lower()
+            
+            if cmd == 'b': break
+            elif cmd == '1':
+                UI.status("Connected Devices:")
+                print(self.run(f"{self.fastboot} devices"))
+                input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
+            elif cmd == '2':
+                UI.status("Sending unlock command... Look at your phone screen to confirm!", "warn")
+                print(self.run(f"{self.fastboot} flashing unlock"))
+                input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
+            elif cmd == '3':
+                UI.status("Sending OEM unlock command... Look at your phone screen!", "warn")
+                print(self.run(f"{self.fastboot} oem unlock"))
+                input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
+            elif cmd == '4':
+                UI.header("FLASH BOOT IMAGE (ROOT)")
+                UI.status("Ensure you have your Magisk patched boot image ready.", "info")
+                path = input("  ➔ Enter full path to patched .img file: ")
+                if os.path.exists(path):
+                    UI.status("Flashing boot image...", "warn")
+                    print(self.run(f"{self.fastboot} flash boot {path}"))
+                else:
+                    UI.status("File not found! Check the path.", "error")
+                input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
+            elif cmd == '5':
+                UI.status("Rebooting device...")
+                print(self.run(f"{self.fastboot} reboot"))
+                time.sleep(2)
+            else:
+                UI.status("Invalid option", "error")
+                time.sleep(1)
 
     def device_ops(self):
         while True:
