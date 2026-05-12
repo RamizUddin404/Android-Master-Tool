@@ -90,14 +90,14 @@ class AndroidMasterTool:
         self.banner()
         UI.header("TOOL CAPABILITIES PREVIEW")
         features = [
-            ("System Diagnostics", "Real-time Battery, Storage, and RAM monitoring."),
-            ("Remote File Control", "Bi-directional file transfer (Push/Pull)."),
-            ("Media Operation", "Capture screen/video directly to your storage."),
-            ("Package Manager", "Sideload APKs and manage app packages."),
-            ("App Extraction", "Backup any installed app into a shareable APK."),
-            ("Network & Debug", "Live Logcat and detailed Network/IP analysis."),
+            ("Hardware Metrics", "Live Battery, CPU, Storage, and RAM monitoring."),
+            ("Remote Operations", "File Control, Screen Capture, and App Extraction."),
+            ("Advanced Suite", "System Debloater, DPI/Resolution Changer."),
+            ("Input Simulation", "Remote control Home/Back and Text typing."),
+            ("Wireless ADB", "Control your device over Wi-Fi (No Cables)."),
+            ("Network & Debug", "Live Logcat, Log Saver, and Network analysis."),
             ("Power Automation", "Force reboot to Fastboot/Recovery while phone is ON."),
-            ("Root & Unlock", "Direct Fastboot commands for flashing & unlocking.")
+            ("Fastboot Console", "Direct commands for Bootloader Unlocking & Flashing.")
         ]
         for title, desc in features:
             print(f"  {UI.BLUE}• {UI.BOLD}{title.ljust(25)}{UI.END} {UI.CYAN}→ {desc}{UI.END}")
@@ -198,6 +198,9 @@ class AndroidMasterTool:
                 ("5", "Extract APK", "6", "Network Info"),
                 ("7", "Process List", "8", "Live Logcat"),
                 ("9", "Remote Shell", "R", "REBOOT TO BOOTLOADER"),
+                ("A", "Advanced Info", "D", "System Debloater"),
+                ("I", "Input Simulator", "S", "Screen Config"),
+                ("W", "Wireless ADB", "L", "Save Logcat File"),
                 ("0", "FULL POWER MENU", "b", "Back to Devices"),
             ]
             
@@ -211,7 +214,7 @@ class AndroidMasterTool:
                 self.run(f"{self.adb} -s {self.target} reboot bootloader")
                 UI.status("Device should be rebooting to Bootloader/Fastboot.", "success")
                 time.sleep(2)
-                break # Return to device list as it will disconnect
+                break
             else:
                 self.execute_command(cmd)
 
@@ -305,6 +308,72 @@ class AndroidMasterTool:
         elif cmd == '9':
             UI.status("Launching Terminal. Type 'exit' to quit.", "info")
             os.system(f"{self.adb} -s {self.target} shell")
+
+        elif cmd == 'a':
+            UI.header("ADVANCED DEVICE INFO")
+            print(f"\n{UI.BOLD}--- KERNEL INFO ---{UI.END}")
+            print(self.run(f"{self.adb} -s {self.target} shell uname -a"))
+            print(f"\n{UI.BOLD}--- BUILD ID ---{UI.END}")
+            print(self.run(f"{self.adb} -s {self.target} shell getprop ro.build.display.id"))
+            print(f"\n{UI.BOLD}--- CPU ARCH ---{UI.END}")
+            print(self.run(f"{self.adb} -s {self.target} shell getprop ro.product.cpu.abi"))
+            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
+
+        elif cmd == 'd':
+            UI.header("SYSTEM DEBLOATER")
+            UI.status("WARNING: Uninstalling system apps can be dangerous!", "warn")
+            pkg = input("  ➔ Enter Package to Remove: ")
+            if pkg:
+                res = self.run(f"{self.adb} -s {self.target} shell pm uninstall -k --user 0 {pkg}")
+                UI.status(res, "success" if "Success" in res else "error")
+            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
+
+        elif cmd == 'i':
+            UI.header("INPUT SIMULATOR")
+            print("  [1] Home  [2] Back  [3] Recents  [4] Type Text")
+            sub = input(f"\n{UI.BOLD}➔ Input Option: {UI.END}")
+            keys = {'1': '3', '2': '4', '3': '187'}
+            if sub in keys:
+                self.run(f"{self.adb} -s {self.target} shell input keyevent {keys[sub]}")
+            elif sub == '4':
+                txt = input("  ➔ Enter Text to Type: ")
+                self.run(f"{self.adb} -s {self.target} shell input text '{txt}'")
+            UI.status("Command sent.", "success")
+            time.sleep(1)
+
+        elif cmd == 's':
+            UI.header("SCREEN CONFIGURATION")
+            print(f"  Current: {self.run(f'{self.adb} -s {self.target} shell wm size')}")
+            print(f"  Density: {self.run(f'{self.adb} -s {self.target} shell wm density')}")
+            print("\n  [1] Reset All  [2] Set Size (e.g. 1080x1920)  [3] Set DPI")
+            sub = input(f"\n{UI.BOLD}➔ Option: {UI.END}")
+            if sub == '1':
+                self.run(f"{self.adb} -s {self.target} shell wm size reset")
+                self.run(f"{self.adb} -s {self.target} shell wm density reset")
+            elif sub == '2':
+                sz = input("  ➔ New Size: ")
+                self.run(f"{self.adb} -s {self.target} shell wm size {sz}")
+            elif sub == '3':
+                dpi = input("  ➔ New DPI: ")
+                self.run(f"{self.adb} -s {self.target} shell wm density {dpi}")
+            UI.status("Settings applied.", "success")
+            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
+
+        elif cmd == 'w':
+            UI.header("WIRELESS ADB SETUP")
+            UI.status("Connecting via TCP/IP (Port 5555)...")
+            self.run(f"{self.adb} -s {self.target} tcpip 5555")
+            ip = self.run(f"{self.adb} -s {self.target} shell ip addr show wlan0 | grep 'inet ' | awk '{{print $2}}'").split('/')[0]
+            UI.status(f"Setup Complete! You can now connect via: adb connect {ip}", "success")
+            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
+
+        elif cmd == 'l':
+            UI.header("LOG SAVER")
+            fname = f"android_log_{int(time.time())}.txt"
+            UI.loading("Saving system logs to file")
+            os.system(f"{self.adb} -s {self.target} logcat -d > {fname}")
+            UI.status(f"Logs saved to {fname}", "success")
+            input(f"\n{UI.YELLOW}Press Enter...{UI.END}")
 
         elif cmd == '0':
             UI.header("FORCE POWER COMMANDS")
