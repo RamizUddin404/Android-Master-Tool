@@ -1,36 +1,86 @@
-# Android Master Tool (ADB Edition)
+# 📱 Android Master Tool (ADB Edition)
 
-A powerful, command-line based Android device management tool written in Python. It uses the Android Debug Bridge (ADB) to interact with connected devices securely and efficiently.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.x](https://img.shields.io/badge/Python-3.x-blue.svg)](https://www.python.org/downloads/)
+[![Platform: Android/Linux/Windows](https://img.shields.io/badge/Platform-Android%20%7C%20Linux%20%7C%20Windows-lightgrey.svg)](#)
 
-## Features
+**Android Master Tool** is a high-performance, command-line utility designed for advanced Android device management and debugging. Built for developers and enthusiasts, it provides a unified interface to control your devices via ADB and Fastboot with precision and ease.
 
-*   **Auto Device Detection:** Scans and connects to available ADB devices (USB or TCP/IP).
-*   **System Information:** Fetch battery health, RAM usage, and storage details.
-*   **App Management:** List all installed third-party applications and easily install new `.apk` files.
-*   **Media Capture:** Take screenshots and record screen (up to 30 seconds) directly to your PC.
-*   **File Transfer:** Pull files from the device or push files to the device easily.
-*   **Power Options:** Advanced reboot options (Normal, Recovery, Bootloader/Fastboot).
-*   **Shell Access:** Drop directly into the device's native shell terminal.
+---
 
-## Requirements
+## 🌟 Key Features
 
-*   Python 3.x
-*   ADB (Android Debug Bridge) installed and added to your system PATH.
-*   An Android device with **USB Debugging** enabled in Developer Options.
+### 🖥️ Professional Console UI
+- **Unified Master Dashboard:** Access all features from a single, beautiful terminal interface.
+- **Auto-Detection:** Instantly recognizes connected devices via USB or Wireless ADB.
+- **Creator Credits:** Built-in professional branding and status indicators.
 
-## Installation & Usage
+### 🛠️ Advanced Device Control
+- **Media Suite:** Capture high-quality screenshots and record screen (30s) with one click.
+- **Package Pro:** Batch install APKs, list 3rd party apps, and extract APKs from your phone to PC.
+- **System Debloater:** Easily remove unwanted system apps/bloatware without root.
+- **Input Simulator:** Send text or key events (Home, Back, etc.) remotely.
 
-1. Clone this repository:
+### ⚡ Power & Recovery
+- **One-Tap Reboot:** Quickly jump to Recovery or Bootloader/Fastboot mode.
+- **Fastboot Utilities:** Unlock bootloaders and flash root images directly from the tool.
+- **Wireless ADB:** Setup and connect to your device over the network seamlessly.
+
+### 📚 Knowledge Base
+- **Rooting Roadmap:** Built-in step-by-step guide for unlocking and rooting modern devices.
+- **Diagnostic Tools:** Real-time battery health, storage metrics, and process monitoring.
+
+---
+
+## 🚀 Installation & Setup
+
+### Prerequisites
+- **Python 3.x**
+- **ADB & Fastboot** tools installed on your system.
+- **USB Debugging** enabled on your Android device.
+
+### For Termux (Android)
+```bash
+pkg install python git nmap -y
+git clone https://github.com/RamizUddin404/Android-Master-Tool.git
+cd Android-Master-Tool
+python android_master_tool.py
+```
+
+### For Linux/Windows
+1. Clone the repository:
    ```bash
-   git clone <your-github-repo-url>
-   cd <your-repo-folder>
+   git clone https://github.com/RamizUddin404/Android-Master-Tool.git
    ```
-
-2. Run the tool:
+2. Navigate to the folder:
+   ```bash
+   cd Android-Master-Tool
+   ```
+3. Run the application:
    ```bash
    python android_master_tool.py
    ```
 
-## Disclaimer
+---
 
-This tool is designed for authorized device management, testing, and debugging purposes using official Android APIs (ADB). It does **not** bypass security protocols or provide unauthorized root access. The creator is not responsible for any damage caused by misuse of ADB commands (e.g., deleting critical system files via shell).
+## 📸 Interface Preview
+```text
+    ╔══════════════════════════════════════════════════════════════════╗
+    ║                >> THE ULTIMATE MASTER CONSOLE <<                 ║
+    ║          ★ Created and Developed by: Ramiz Uddin ★               ║
+    ╚══════════════════════════════════════════════════════════════════╝
+    [*] Searching for devices in local environment...
+    [+] DETECTED DEVICES: 1
+    [1] ID: emulator-5554   | Model: Pixel 6 Pro     | Root: NO
+```
+
+---
+
+## ⚖️ Disclaimer
+This tool is intended for educational and authorized device management purposes only. It utilizes official Android APIs (ADB/Fastboot). The creator is not responsible for any misuse, data loss, or "bricking" of devices. **Always backup your data before performing advanced operations.**
+
+## 📜 License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+**Developed with ❤️ by [Ramiz Uddin](https://github.com/RamizUddin404)**
