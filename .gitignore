@@ -1,21 +1,36 @@
-# Bytecode / Python
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Environment
 .env
-.venv
-env/
+.gemini/
+.ssh/
+.bash_history
+.zsh_history
+.npm/
+.cache/
+.android/
+.termux_authinfo
+*.keystore
+bot.db
+users.db
+__pycache__/
+*.pyc
+logs/
+storage/
+downloads/
+.buildozer/
+.bundle/
+.cargo/
+.config/
+.cpan/
+.gnupg/
+.hermes/
+.kivy/
+.local/
+.ngrok2/
+.recovery_master/
+.wifi_ctrl/
+node_modules/
 venv/
-ENV/
-
-# Tool Generated Files
-screenshot_*.png
-record_*.mp4
-*.apk
-*.log
-
-# OS files
-.DS_Store
-Thumbs.db
+lib/
+bin/
+apk/
+build/
+*.idsig
